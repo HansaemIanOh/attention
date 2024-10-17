@@ -31,7 +31,7 @@ class AttentionBlock(nn.Module):
             nn.Linear(mlp_dim, attn_dim),
             nn.Dropout(dropout)
         )
-    def forward(self, x: Tensor, dis_attn_mask: Tensor, cls_attn_mask: Tensor) -> Tensor:
+    def forward(self, x: Tensor, attn_mask: Tensor) -> Tensor:
         '''
         x : [B, S, F]
         pad_attn_mask : [B, S]
@@ -50,7 +50,7 @@ class AttentionBlock(nn.Module):
         # q : BHSF | k, v : BHsF, S = s
         w = torch.einsum('BHSF, BHFs -> BHSs', q, k.transpose(-2, -1)) * (self.head_dim ** (-0.5))
         # Apply attention masks
-        w = w + dis_attn_mask.unsqueeze(1) + cls_attn_mask.unsqueeze(1)
+        w = w + attn_mask.unsqueeze(1)
         w = nn.functional.softmax(w, dim=-1) # dimension of s
         h_attn = torch.einsum('BHSs, BHsF -> BHSF', w, v)
         h_attn = h_attn.view(B, S, F)
